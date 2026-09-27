@@ -551,17 +551,36 @@ public class ChatWorkspaceFrame extends JFrame {
 
     private void loadUsers() {
         new SwingWorker<List<User>, Void>() {
-            @Override protected List<User> doInBackground() { return userDAO.findOnlineUsers(); }
+            @Override protected List<User> doInBackground() throws Exception {
+                List<User> users = userDAO.findOnlineUsers();
+                List<Friend> friends = friendService.getFriends(currentUser);
+                List<User> friendUsers = friends.stream().map(Friend::user).toList();
+                
+                java.util.Set<Long> userIds = new java.util.HashSet<>();
+                List<User> combined = new ArrayList<>();
+                for (User u : friendUsers) {
+                    if (!u.getId().equals(currentUser.getId()) && userIds.add(u.getId())) {
+                        combined.add(u);
+                    }
+                }
+                for (User u : users) {
+                    if (!u.getId().equals(currentUser.getId()) && userIds.add(u.getId())) {
+                        combined.add(u);
+                    }
+                }
+                return combined;
+            }
             @Override protected void done() {
                 try {
                     List<User> users = get();
                     userModel.clear();
-                    users.stream().filter(u -> !u.getId().equals(currentUser.getId())).forEach(userModel::addElement);
+                    users.forEach(userModel::addElement);
                     updateUnreadBadge();
                 } catch (Exception ignored) {}
             }
         }.execute();
     }
+
 
     private void refreshNotifBadge() {
         new SwingWorker<Integer, Void>() {
@@ -700,10 +719,12 @@ public class ChatWorkspaceFrame extends JFrame {
                         else if (choice == JOptionPane.NO_OPTION) friendService.declineRequest(currentUser, r.id());
                     }
                     status("Requests processed.");
+                    loadUsers();
                 } catch (Exception ex) { status("Failed to process requests."); }
             }
         }.execute();
     }
+
 
     private void showNotifications() {
         activateNav(navNotifs);
