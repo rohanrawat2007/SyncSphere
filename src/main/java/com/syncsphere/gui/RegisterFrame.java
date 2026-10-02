@@ -65,6 +65,8 @@ public class RegisterFrame extends JFrame {
 
     private JPanel buildCardBody() {
         DesignSystem.Palette colors = DesignSystem.palette(darkTheme);
+        registerButton.setForeground(colors.text());
+        backButton.setForeground(darkTheme ? DesignSystem.ACCENT : DesignSystem.LIGHT_TEXT);
         JPanel body = new JPanel();
         body.setOpaque(false);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));

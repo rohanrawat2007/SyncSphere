@@ -56,22 +56,22 @@ public class ChatFrame extends JFrame {
     private JPanel buildContentPane() {
         JPanel root = new JPanel(new BorderLayout(12, 12));
         root.setBorder(new EmptyBorder(16, 16, 16, 16));
-        root.setBackground(new Color(11, 16, 32));
+        root.setBackground(new Color(240, 235, 230));
 
         JPanel topBar = new JPanel(new BorderLayout());
-        topBar.setBackground(new Color(17, 24, 39, 220));
+        topBar.setBackground(new Color(255, 255, 255, 190));
         topBar.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
 
         JLabel appTitle = new JLabel("SyncSphere");
         appTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        appTitle.setForeground(new Color(248, 250, 252));
+        appTitle.setForeground(new Color(28, 35, 39));
 
         JLabel profileLabel = new JLabel(currentUser.getUsername() + "  •  " + currentUser.getRole());
-        profileLabel.setForeground(new Color(34, 211, 238));
+        profileLabel.setForeground(new Color(123, 152, 143));
         profileLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
         JButton logoutButton = new JButton("Logout");
-        logoutButton.setBackground(new Color(248, 113, 113));
+        logoutButton.setBackground(new Color(162, 101, 89));
         logoutButton.setForeground(Color.WHITE);
         logoutButton.addActionListener(e -> handleLogout());
 
@@ -82,25 +82,25 @@ public class ChatFrame extends JFrame {
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setBorder(null);
         splitPane.setResizeWeight(0.22);
-        splitPane.setBackground(new Color(11, 16, 32));
+        splitPane.setBackground(new Color(240, 235, 230));
 
         JPanel sidebar = new JPanel(new BorderLayout());
-        sidebar.setBackground(new Color(17, 24, 39, 220));
+        sidebar.setBackground(new Color(255, 255, 255, 190));
         sidebar.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
         JLabel onlineLabel = new JLabel("Online Users");
-        onlineLabel.setForeground(new Color(248, 250, 252));
+        onlineLabel.setForeground(new Color(28, 35, 39));
         onlineLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
 
-        onlineUsersList.setBackground(new Color(15, 23, 42));
-        onlineUsersList.setForeground(new Color(248, 250, 252));
-        onlineUsersList.setSelectionBackground(new Color(124, 92, 252));
+        onlineUsersList.setBackground(new Color(247, 242, 236));
+        onlineUsersList.setForeground(new Color(28, 35, 39));
+        onlineUsersList.setSelectionBackground(new Color(181, 126, 95));
         onlineUsersList.setSelectionForeground(Color.WHITE);
         onlineUsersList.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
             JLabel label = new JLabel("🟢 " + value);
             label.setOpaque(true);
-            label.setBackground(isSelected ? list.getSelectionBackground() : new Color(15, 23, 42));
-            label.setForeground(isSelected ? list.getSelectionForeground() : new Color(248, 250, 252));
+            label.setBackground(isSelected ? list.getSelectionBackground() : new Color(237, 229, 220));
+            label.setForeground(isSelected ? list.getSelectionForeground() : new Color(28, 35, 39));
             label.setBorder(new EmptyBorder(6, 10, 6, 10));
             return label;
         });
@@ -140,15 +140,15 @@ public class ChatFrame extends JFrame {
         sidebar.add(moderationPanel, BorderLayout.SOUTH);
 
         JPanel center = new JPanel(new BorderLayout(12, 12));
-        center.setBackground(new Color(17, 24, 39, 220));
+        center.setBackground(new Color(255, 255, 255, 200));
         center.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
         messageArea.setEditable(false);
         messageArea.setLineWrap(true);
         messageArea.setWrapStyleWord(true);
-        messageArea.setBackground(new Color(15, 23, 42));
-        messageArea.setForeground(new Color(248, 250, 252));
-        messageArea.setCaretColor(new Color(248, 250, 252));
+        messageArea.setBackground(new Color(247, 242, 236));
+        messageArea.setForeground(new Color(28, 35, 39));
+        messageArea.setCaretColor(new Color(28, 35, 39));
         messageArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         messageArea.setBorder(new EmptyBorder(10, 10, 10, 10));
 
@@ -160,16 +160,16 @@ public class ChatFrame extends JFrame {
         inputArea.setRows(3);
         inputArea.setLineWrap(true);
         inputArea.setWrapStyleWord(true);
-        inputArea.setBackground(new Color(15, 23, 42));
-        inputArea.setForeground(new Color(248, 250, 252));
+        inputArea.setBackground(new Color(247, 242, 236));
+        inputArea.setForeground(new Color(28, 35, 39));
         inputArea.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(124, 92, 252, 150)),
+                BorderFactory.createLineBorder(new Color(181, 126, 95, 150)),
                 new EmptyBorder(8, 10, 8, 10)
         ));
 
         JButton sendButton = new JButton("Send");
         sendButton.setPreferredSize(new Dimension(120, 40));
-        sendButton.setBackground(new Color(124, 92, 252));
+        sendButton.setBackground(new Color(181, 126, 95));
         sendButton.setForeground(Color.WHITE);
         sendButton.addActionListener(e -> sendCurrentMessage());
 
@@ -179,7 +179,7 @@ public class ChatFrame extends JFrame {
         center.add(messageScroll, BorderLayout.CENTER);
         center.add(inputBar, BorderLayout.SOUTH);
 
-        statusLabel.setForeground(new Color(148, 163, 184));
+        statusLabel.setForeground(new Color(96, 109, 114));
         statusLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
 
         root.add(topBar, BorderLayout.NORTH);

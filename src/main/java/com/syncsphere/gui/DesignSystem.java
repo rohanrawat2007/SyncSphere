@@ -26,27 +26,27 @@ import java.awt.geom.RoundRectangle2D;
 
 /** Shared visual primitives for the Figma-derived Swing interface. */
 public final class DesignSystem {
-    public static final Color BACKGROUND = new Color(11, 16, 32);
-    public static final Color SURFACE = new Color(24, 25, 58, 224);
-    public static final Color SURFACE_RAISED = new Color(38, 35, 78, 235);
-    public static final Color INPUT = new Color(15, 16, 44, 220);
-    public static final Color PRIMARY = new Color(124, 92, 252);
-    public static final Color ACCENT = new Color(34, 211, 238);
-    public static final Color SUCCESS = new Color(52, 211, 153);
-    public static final Color WARNING = new Color(251, 191, 36);
-    public static final Color DANGER = new Color(248, 113, 113);
-    public static final Color TEXT = new Color(248, 250, 252);
-    public static final Color MUTED = new Color(148, 163, 184);
-    public static final Color BORDER = new Color(196, 181, 253, 52);
-    public static final Color FOCUS = new Color(124, 92, 252, 180);
+    public static final Color BACKGROUND = new Color(13, 17, 21);
+    public static final Color SURFACE = new Color(26, 31, 36, 210);
+    public static final Color SURFACE_RAISED = new Color(34, 40, 46, 230);
+    public static final Color INPUT = new Color(23, 28, 32, 200);
+    public static final Color PRIMARY = new Color(202, 165, 121);
+    public static final Color ACCENT = new Color(128, 157, 149);
+    public static final Color SUCCESS = new Color(122, 156, 128);
+    public static final Color WARNING = new Color(191, 156, 110);
+    public static final Color DANGER = new Color(164, 109, 101);
+    public static final Color TEXT = new Color(243, 239, 233);
+    public static final Color MUTED = new Color(172, 181, 184);
+    public static final Color BORDER = new Color(255, 255, 255, 35);
+    public static final Color FOCUS = new Color(202, 165, 121, 180);
 
-    public static final Color LIGHT_BACKGROUND = new Color(242, 245, 255);
-    public static final Color LIGHT_SURFACE = new Color(255, 255, 255, 232);
-    public static final Color LIGHT_RAISED = new Color(247, 248, 255, 244);
-    public static final Color LIGHT_INPUT = new Color(245, 247, 255);
-    public static final Color LIGHT_TEXT = new Color(30, 41, 59);
-    public static final Color LIGHT_MUTED = new Color(100, 116, 139);
-    public static final Color LIGHT_BORDER = new Color(99, 102, 241, 48);
+    public static final Color LIGHT_BACKGROUND = new Color(245, 239, 232);
+    public static final Color LIGHT_SURFACE = new Color(255, 255, 255, 220);
+    public static final Color LIGHT_RAISED = new Color(255, 255, 255, 245);
+    public static final Color LIGHT_INPUT = new Color(247, 241, 234);
+    public static final Color LIGHT_TEXT = new Color(21, 27, 30);
+    public static final Color LIGHT_MUTED = new Color(93, 104, 111);
+    public static final Color LIGHT_BORDER = new Color(90, 96, 101, 30);
 
     private DesignSystem() { }
 
@@ -68,8 +68,10 @@ public final class DesignSystem {
         field.setCaretColor(colors.text());
         field.setSelectionColor(PRIMARY);
         field.setSelectedTextColor(TEXT);
-        field.setBorder(BorderFactory.createCompoundBorder(new RoundedBorder(colors.border(), 12),
+        field.setBorder(BorderFactory.createCompoundBorder(
+                new RoundedBorder(colors.border(), 12),
                 BorderFactory.createEmptyBorder(11, 14, 11, 14)));
+        field.putClientProperty("JComponent.sizeVariant", "regular");
     }
 
     public static void styleField(JPasswordField field, boolean dark) { styleField((JTextField) field, dark); }
@@ -78,6 +80,8 @@ public final class DesignSystem {
         button.setFont(font(Font.BOLD, 13));
         button.setBackground(background);
         button.setForeground(foreground);
+        button.setMargin(new Insets(8, 14, 8, 14));
+        button.setMinimumSize(new Dimension(72, 36));
         button.setFocusPainted(false);
         button.setContentAreaFilled(false);
         button.setOpaque(false);
@@ -85,6 +89,7 @@ public final class DesignSystem {
         button.setRolloverEnabled(true);
         button.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
         button.setToolTipText(button.getText());
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             final Color original = background;
             @Override public void mouseEntered(java.awt.event.MouseEvent e) { button.setBackground(brighten(original)); button.repaint(); }
@@ -231,7 +236,11 @@ public final class DesignSystem {
     public static class AmbientPanel extends JPanel {
         private final boolean dark;
 
-        public AmbientPanel(boolean dark) { this.dark = dark; setOpaque(true); }
+        public AmbientPanel(boolean dark) {
+            this.dark = dark;
+            setOpaque(true);
+            setDoubleBuffered(true);
+        }
 
         @Override protected void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics.create();
@@ -239,15 +248,15 @@ public final class DesignSystem {
             int width = getWidth();
             int height = getHeight();
             Paint base = dark
-                    ? new GradientPaint(0, 0, new Color(24, 24, 62), width, height, BACKGROUND)
-                    : new GradientPaint(0, 0, new Color(244, 242, 255), width, height, new Color(231, 246, 255));
+                    ? new GradientPaint(0, 0, new Color(12, 16, 21), width, height, new Color(30, 35, 42))
+                    : new GradientPaint(0, 0, new Color(248, 242, 236), width, height, new Color(232, 239, 236));
             g.setPaint(base);
             g.fillRect(0, 0, width, height);
-            g.setComposite(AlphaComposite.SrcOver.derive(dark ? .22f : .13f));
-            g.setColor(PRIMARY);
-            g.fill(new Ellipse2D.Double(-width * .14, -height * .18, width * .55, height * .60));
-            g.setColor(ACCENT);
-            g.fill(new Ellipse2D.Double(width * .58, height * .40, width * .52, height * .60));
+            g.setComposite(AlphaComposite.SrcOver.derive(dark ? .22f : .16f));
+            g.setColor(new Color(202, 165, 121));
+            g.fill(new Ellipse2D.Double(-width * .16, -height * .18, width * .56, height * .62));
+            g.setColor(new Color(128, 157, 149));
+            g.fill(new Ellipse2D.Double(width * .52, height * .38, width * .58, height * .66));
             g.dispose();
             super.paintComponent(graphics);
         }
@@ -257,7 +266,12 @@ public final class DesignSystem {
         private final boolean dark;
         private final int radius;
 
-        public GlassPanel(boolean dark, int radius) { this.dark = dark; this.radius = radius; setOpaque(false); }
+        public GlassPanel(boolean dark, int radius) {
+            this.dark = dark;
+            this.radius = radius;
+            setOpaque(false);
+            setDoubleBuffered(true);
+        }
 
         @Override protected void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics.create();
@@ -265,8 +279,8 @@ public final class DesignSystem {
             Palette colors = palette(dark);
             g.setColor(colors.surface());
             g.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
-            g.setColor(colors.border());
-            g.setStroke(new BasicStroke(1f));
+            g.setColor(new Color(colors.border().getRed(), colors.border().getGreen(), colors.border().getBlue(), 90));
+            g.setStroke(new BasicStroke(1.1f));
             g.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
             g.dispose();
             super.paintComponent(graphics);
@@ -282,14 +296,18 @@ public final class DesignSystem {
             this.fill = fill;
             this.hover = brighten(fill);
             styleButton(this, fill, foreground);
+            setDoubleBuffered(true);
         }
 
         @Override protected void paintComponent(Graphics graphics) {
             Graphics2D g = (Graphics2D) graphics.create();
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            Color color = getModel().isPressed() ? fill.darker() : getModel().isRollover() ? hover : fill;
+            Color color = !isEnabled() ? new Color(fill.getRed(), fill.getGreen(), fill.getBlue(), 90)
+                    : getModel().isPressed() ? fill.darker() : getModel().isRollover() ? hover : fill;
             g.setColor(color);
             g.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+            g.setColor(new Color(255, 255, 255, isEnabled() ? 26 : 12));
+            g.fillRoundRect(0, 0, getWidth() - 1, getHeight() / 2, 12, 12);
             g.dispose();
             super.paintComponent(graphics);
         }

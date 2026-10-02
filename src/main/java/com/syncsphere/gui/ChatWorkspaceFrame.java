@@ -37,9 +37,9 @@ import java.util.stream.Collectors;
  */
 public class ChatWorkspaceFrame extends JFrame {
 
-    private static final Color DARK_BG    = DesignSystem.BACKGROUND;
-    private static final Color DARK_PANEL = DesignSystem.SURFACE;
-    private static final Color DARK_INPUT = DesignSystem.INPUT;
+    private static final Color DARK_BG    = new Color(19, 23, 27);
+    private static final Color DARK_PANEL = new Color(28, 33, 38, 210);
+    private static final Color DARK_INPUT = new Color(23, 27, 31, 200);
     private static final Color PURPLE     = DesignSystem.PRIMARY;
     private static final Color CYAN       = DesignSystem.ACCENT;
     private static final Color GREEN      = DesignSystem.SUCCESS;
@@ -169,16 +169,16 @@ public class ChatWorkspaceFrame extends JFrame {
 
     private JPanel buildHeader() {
         JPanel header = new JPanel(new BorderLayout(12, 0));
-        header.setBackground(DARK_PANEL);
+        header.setBackground(darkTheme ? DARK_PANEL : DesignSystem.LIGHT_SURFACE);
         header.setBorder(BorderFactory.createCompoundBorder(
             new DesignSystem.RoundedBorder(DesignSystem.BORDER, 0),
             new EmptyBorder(10, 16, 10, 16)));
-        JLabel title   = lbl("SyncSphere", 20, Font.BOLD, TEXT);
+        JLabel title   = lbl("SyncSphere", 20, Font.BOLD, themeText());
         JPanel right   = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
-        JLabel profile = lbl(currentUser.getUsername() + "   \u2022   " + currentUser.getRole(), 12, Font.PLAIN, CYAN);
+        JLabel profile = lbl(currentUser.getUsername() + "   \u2022   " + currentUser.getRole(), 12, Font.PLAIN, themeAccent());
         right.add(profile);
-        JButton themeBtn = btn(darkTheme ? "\u2600 Light" : "\u263D Dark", MUTED);
+        JButton themeBtn = btn(darkTheme ? "\u2600 Light" : "\u263D Dark", themeMuted());
         themeBtn.addActionListener(e -> toggleTheme());
         right.add(themeBtn);
         if (currentUser.isModerator()) {
@@ -234,10 +234,10 @@ public class ChatWorkspaceFrame extends JFrame {
         userScroll.getViewport().setBackground(darkTheme ? DARK_INPUT : DesignSystem.LIGHT_INPUT);
         JPanel actions = new JPanel(new GridLayout(0, 1, 0, 5));
         actions.setOpaque(false);
-        JButton publicBtn  = btn("\u25CE  Public sphere", CYAN);
-        JButton findBtn    = btn("\u2315  Find People",    CYAN);
-        JButton requestBtn = btn("+  Requests",           YELLOW);
-        JButton friendsBtn = btn("\u2668  Friends",        GREEN);
+        JButton publicBtn  = btn("Home", CYAN);
+        JButton findBtn    = btn("Find", CYAN);
+        JButton requestBtn = btn("Reqs", YELLOW);
+        JButton friendsBtn = btn("Friends", GREEN);
         publicBtn.addActionListener(  e -> switchToPublic());
         findBtn.addActionListener(    e -> showFindPeople());
         requestBtn.addActionListener( e -> showFriendRequests());
@@ -283,7 +283,7 @@ public class ChatWorkspaceFrame extends JFrame {
         convBar.add(searchBtn,       BorderLayout.EAST);
         messageList.setBackground(darkTheme ? DARK_BG : DesignSystem.LIGHT_BACKGROUND);
         messageList.setForeground(TEXT);
-        messageList.setSelectionBackground(new Color(76, 58, 160, 120));
+        messageList.setSelectionBackground(new Color(181, 126, 95, 120));
         messageList.setCellRenderer(new MessageCellRenderer());
         messageList.addListSelectionListener(e -> { Message sel = messageList.getSelectedValue(); if (sel != null) markRead(sel); });
         JPopupMenu msgMenu = buildMessageContextMenu();
@@ -302,7 +302,7 @@ public class ChatWorkspaceFrame extends JFrame {
         });
         typingLabel.setForeground(CYAN);
         typingLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        JButton sendBtn = new DesignSystem.GlassButton("  Send \u2192", PURPLE, TEXT);
+        JButton sendBtn = new DesignSystem.GlassButton("  Send \u2192", PURPLE, buttonText());
         sendBtn.addActionListener(e -> sendMessage());
         sendBtn.setPreferredSize(new Dimension(90, 0));
         JPanel composer = new JPanel(new BorderLayout(8, 0));
@@ -347,7 +347,7 @@ public class ChatWorkspaceFrame extends JFrame {
         infoCard.add(emailHdr); infoCard.add(emailVal); infoCard.add(Box.createVerticalStrut(10));
         infoCard.add(provHdr);  infoCard.add(provVal);  infoCard.add(Box.createVerticalStrut(10));
         infoCard.add(msgsHdr);  infoCard.add(msgsVal);
-        JButton logoutBtn = new DesignSystem.GlassButton("Logout", RED, TEXT);
+        JButton logoutBtn = new DesignSystem.GlassButton("Logout", RED, buttonText());
         logoutBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         logoutBtn.setMaximumSize(new Dimension(200, 38));
         logoutBtn.addActionListener(e -> handleLogout());
@@ -384,7 +384,7 @@ public class ChatWorkspaceFrame extends JFrame {
                 int idx, boolean sel, boolean focus) {
             DesignSystem.HoverPanel row = new DesignSystem.HoverPanel(
                 darkTheme ? DARK_INPUT : DesignSystem.LIGHT_INPUT,
-                darkTheme ? new Color(38, 35, 78) : new Color(230, 225, 255));
+                darkTheme ? new Color(39, 45, 51) : new Color(239, 232, 223));
             row.setLayout(new BorderLayout(8, 0));
             row.setBorder(new EmptyBorder(8, 10, 8, 10));
             if (sel) row.setBackground(PURPLE);
@@ -402,15 +402,15 @@ public class ChatWorkspaceFrame extends JFrame {
         @Override public Component getListCellRendererComponent(JList<? extends Message> list, Message msg,
                 int idx, boolean sel, boolean focus) {
             boolean mine = currentUser.getId().equals(msg.getSenderId());
-            Color bg = sel ? new Color(76, 58, 160, 80) : (mine
-                ? (darkTheme ? new Color(30, 22, 60) : new Color(235, 230, 255))
-                : (darkTheme ? DARK_BG : DesignSystem.LIGHT_BACKGROUND));
+            Color bg = sel ? new Color(197, 166, 120, 98) : (mine
+                ? (darkTheme ? new Color(39, 45, 51) : new Color(247, 239, 233))
+                : (darkTheme ? new Color(24, 29, 34, 180) : DesignSystem.LIGHT_BACKGROUND));
             setBackground(bg);
             String esc = msg.getContent().replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
-            String hi = esc.replaceAll("(@[A-Za-z0-9_]{3,20})", "<font color='#22D3EE'>$1</font>");
-            String edit = msg.isEdited() ? " <font color='#94A3B8'><i>(edited)</i></font>" : "";
-            String repl = msg.getReplyToMessageId() != null ? "<font color='#94A3B8'>\u21AA reply</font><br>" : "";
-            String nc = mine ? "#C4B5FD" : "#7C5CFC";
+            String hi = esc.replaceAll("(@[A-Za-z0-9_]{3,20})", "<font color='#C5A678'>$1</font>");
+            String edit = msg.isEdited() ? " <font color='#B7C0C3'><i>(edited)</i></font>" : "";
+            String repl = msg.getReplyToMessageId() != null ? "<font color='#B7C0C3'>\u21AA reply</font><br>" : "";
+            String nc = mine ? "#D6B593" : "#89A29C";
             body.setText("<html><b style='color:" + nc + "'>" + msg.getSenderUsername() +
                 "</b>&nbsp;<font color='#94A3B8'>" + msg.getCreatedAt().format(TIME_FMT) + "</font>" +
                 edit + "<br>" + repl + hi + "</html>");
@@ -641,7 +641,12 @@ public class ChatWorkspaceFrame extends JFrame {
         darkTheme = !darkTheme;
         ThemePreferences.save(darkTheme);
         status(darkTheme ? "Dark theme selected." : "Light theme selected.");
-        SwingUtilities.invokeLater(() -> { setContentPane(buildContentPane()); revalidate(); repaint(); });
+        SwingUtilities.invokeLater(() -> {
+            setContentPane(buildContentPane());
+            if (!darkTheme) applyLightTheme();
+            revalidate();
+            repaint();
+        });
     }
 
     private void applyLightTheme() {
@@ -665,8 +670,13 @@ public class ChatWorkspaceFrame extends JFrame {
     }
 
     private JButton btn(String text, Color accent) {
-        return new DesignSystem.GlassButton(text, accent, TEXT);
+        return new DesignSystem.GlassButton(text, accent, buttonText());
     }
+
+    private Color themeText() { return darkTheme ? TEXT : DesignSystem.LIGHT_TEXT; }
+    private Color themeMuted() { return darkTheme ? MUTED : DesignSystem.LIGHT_MUTED; }
+    private Color themeAccent() { return darkTheme ? CYAN : new Color(65, 106, 99); }
+    private Color buttonText() { return darkTheme ? TEXT : DesignSystem.LIGHT_TEXT; }
 
     private void styleInput(javax.swing.text.JTextComponent component) {
         component.setBackground(darkTheme ? DARK_INPUT : DesignSystem.LIGHT_INPUT);
@@ -765,19 +775,119 @@ public class ChatWorkspaceFrame extends JFrame {
     }
 
     private void showFindPeople() {
-        String username = JOptionPane.showInputDialog(this, "Enter username to send friend request:");
-        if (username == null || username.isBlank()) return;
+        JTextField queryField = new JTextField();
+        styleInput(queryField);
+        queryField.setText("");
+
+        DefaultListModel<User> searchModel = new DefaultListModel<>();
+        JList<User> searchList = new JList<>(searchModel);
+        searchList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        searchList.setCellRenderer((list, user, index, isSelected, cellHasFocus) -> {
+            JPanel row = new JPanel(new BorderLayout(8, 0));
+            row.setOpaque(true);
+            row.setBackground(isSelected ? new Color(181, 126, 95, 110) : (darkTheme ? DARK_INPUT : DesignSystem.LIGHT_INPUT));
+            row.setBorder(new EmptyBorder(8, 10, 8, 10));
+
+            JLabel name = new JLabel(user.getUsername());
+            name.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            name.setForeground(darkTheme ? TEXT : DesignSystem.LIGHT_TEXT);
+
+            JLabel state = new JLabel(user.isOnline() ? "online" : "offline");
+            state.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            state.setForeground(user.isOnline() ? GREEN : MUTED);
+
+            row.add(name, BorderLayout.CENTER);
+            row.add(state, BorderLayout.EAST);
+            return row;
+        });
+
+        JScrollPane searchScroll = new JScrollPane(searchList);
+        searchScroll.setBorder(null);
+        searchScroll.getViewport().setBackground(darkTheme ? DARK_BG : DesignSystem.LIGHT_BACKGROUND);
+
+        JButton searchBtn = new DesignSystem.GlassButton("Search", CYAN, buttonText());
+        JButton addBtn = new DesignSystem.GlassButton("Add friend", GREEN, buttonText());
+        addBtn.setEnabled(false);
+
+        Runnable loadResults = () -> {
+            String query = queryField.getText() == null ? "" : queryField.getText().trim();
+            new SwingWorker<List<User>, Void>() {
+                @Override protected List<User> doInBackground() throws Exception {
+                    return friendService.searchUsers(currentUser, query);
+                }
+                @Override protected void done() {
+                    try {
+                        List<User> users = get();
+                        searchModel.clear();
+                        if (users.isEmpty()) {
+                            status("No matching users found.");
+                        } else {
+                            users.forEach(searchModel::addElement);
+                        }
+                        addBtn.setEnabled(!searchModel.isEmpty());
+                    } catch (Exception ex) {
+                        status(ex.getCause() != null ? ex.getCause().getMessage() : "Search failed.");
+                    }
+                }
+            }.execute();
+        };
+
+        queryField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { loadResults.run(); }
+            public void removeUpdate(DocumentEvent e) { loadResults.run(); }
+            public void changedUpdate(DocumentEvent e) { loadResults.run(); }
+        });
+
+        searchBtn.addActionListener(e -> loadResults.run());
+        searchList.addListSelectionListener(e -> addBtn.setEnabled(searchList.getSelectedIndex() >= 0));
+        addBtn.addActionListener(e -> {
+            User target = searchList.getSelectedValue();
+            if (target == null) { status("Select a user from the results first."); return; }
+            addFriendRequest(target);
+        });
+
+        JPanel dialogPanel = new JPanel(new BorderLayout(10, 10));
+        dialogPanel.setOpaque(false);
+        dialogPanel.setBorder(new EmptyBorder(16, 16, 16, 16));
+        JPanel topPanel = new JPanel(new BorderLayout(8, 0));
+        topPanel.setOpaque(false);
+        topPanel.add(queryField, BorderLayout.CENTER);
+        topPanel.add(searchBtn, BorderLayout.EAST);
+        dialogPanel.add(topPanel, BorderLayout.NORTH);
+        dialogPanel.add(searchScroll, BorderLayout.CENTER);
+
+        JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        bottomBar.setOpaque(false);
+        bottomBar.add(addBtn);
+        JButton closeBtn = new DesignSystem.GlassButton("Close", new Color(255, 255, 255, 18), buttonText());
+        bottomBar.add(closeBtn);
+        dialogPanel.add(bottomBar, BorderLayout.SOUTH);
+
+        JOptionPane pane = new JOptionPane(dialogPanel, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{});
+        JDialog dialog = pane.createDialog(this, "Add friend");
+        closeBtn.addActionListener(e -> dialog.dispose());
+        dialog.setResizable(true);
+        dialog.setSize(new Dimension(420, 420));
+        dialog.setLocationRelativeTo(this);
+        loadResults.run();
+        dialog.setVisible(true);
+    }
+
+    private void addFriendRequest(User target) {
+        if (target == null) return;
         new SwingWorker<Void, Void>() {
             @Override protected Void doInBackground() throws Exception {
-                User target = userDAO.findByUsername(username.trim());
-                if (target == null) throw new IllegalArgumentException("User not found.");
                 friendService.sendRequest(currentUser, target.getId());
                 return null;
             }
             @Override protected void done() {
-                try { get(); status("Friend request sent!"); }
-
-                catch (Exception ex) { status(ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage()); }
+                try {
+                    get();
+                    status("Friend request sent to " + target.getUsername() + ".");
+                    loadUsers();
+                } catch (Exception ex) {
+                    status(ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage());
+                }
             }
         }.execute();
     }

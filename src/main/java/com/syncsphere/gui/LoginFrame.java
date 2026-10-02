@@ -75,6 +75,9 @@ public class LoginFrame extends JFrame {
 
     private JPanel buildCardBody() {
         DesignSystem.Palette colors = DesignSystem.palette(darkTheme);
+        loginButton.setForeground(colors.text());
+        googleButton.setForeground(colors.text());
+        registerButton.setForeground(darkTheme ? DesignSystem.ACCENT : DesignSystem.LIGHT_TEXT);
         JPanel body = new JPanel();
         body.setOpaque(false);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
