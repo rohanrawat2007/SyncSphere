@@ -22,12 +22,17 @@ public class DBConnection {
     private static final String DOT_ENV_FILE = ".env";
 
     public static String buildJdbcUrl(String host, String port, String database) {
+        return buildJdbcUrl(host, port, database, false);
+    }
+
+    public static String buildJdbcUrl(String host, String port, String database, boolean ssl) {
         String effectiveHost = firstNonBlank(host, DEFAULT_HOST);
         String effectivePort = firstNonBlank(port, DEFAULT_PORT);
         String effectiveDatabase = firstNonBlank(database, DEFAULT_DATABASE);
 
         return "jdbc:mysql://" + effectiveHost + ":" + effectivePort + "/" + effectiveDatabase
-                + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=5000&socketTimeout=5000";
+                + "?" + (ssl ? "sslMode=REQUIRED" : "useSSL=false")
+                + "&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=5000&socketTimeout=5000";
     }
 
     public static String buildJdbcUrl() {
@@ -48,7 +53,8 @@ public class DBConnection {
             return createFallbackConnection();
         }
 
-        String url = buildJdbcUrl(host, port, database);
+        boolean ssl = "true".equalsIgnoreCase(resolveConfigValue("DB_SSL", "false"));
+        String url = buildJdbcUrl(host, port, database, ssl);
         try {
             return DriverManager.getConnection(url, user, password);
         } catch (SQLException e) {
