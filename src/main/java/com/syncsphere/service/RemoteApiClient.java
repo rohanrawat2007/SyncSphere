@@ -13,17 +13,28 @@ import com.syncsphere.model.FriendRequest;
 import com.syncsphere.model.Notification;
 
 import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.awt.Desktop;
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.ServerSocket;
+import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 /** Client for the credential-free HTTPS API used by distributed desktop clients. */
 public final class RemoteApiClient {
@@ -87,6 +98,44 @@ public final class RemoteApiClient {
     }
 
     public static String sessionToken() { return sessionToken; }
+
+    public static User googleLogin() throws IOException {
+        if (!isConfigured()) throw new IOException("Remote API is not configured.");
+        try (ServerSocket callbackServer = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            callbackServer.setSoTimeout(180_000);
+            String callback = "http://127.0.0.1:" + callbackServer.getLocalPort() + "/oauth2/callback";
+            String start = apiUrl() + "/api/syncsphere/google/start?redirect_uri=" + java.net.URLEncoder.encode(callback, StandardCharsets.UTF_8);
+            if (!Desktop.isDesktopSupported()) throw new IOException("A desktop browser is required for Google sign-in.");
+            try { Desktop.getDesktop().browse(URI.create(start)); }
+            catch (Exception exception) { throw new IOException("Could not open the Google sign-in page.", exception); }
+            try (var socket = callbackServer.accept();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
+                String requestLine = reader.readLine();
+                if (requestLine == null || !requestLine.startsWith("GET ")) throw new IOException("Google callback was invalid.");
+                URI callbackUri = URI.create(requestLine.substring(4, requestLine.indexOf(" HTTP/")));
+                Map<String, String> values = queryValues(callbackUri.getRawQuery());
+                String token = values.get("token");
+                String encodedUser = values.get("user");
+                String response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<h2>SyncSphere sign-in complete</h2><p>You can return to the app.</p>";
+                try (OutputStream output = socket.getOutputStream()) { output.write(response.getBytes(StandardCharsets.UTF_8)); }
+                if (token == null || encodedUser == null) throw new IOException("Google sign-in was not completed.");
+                sessionToken = token;
+                return parseUser(JsonParser.parseString(new String(Base64.getUrlDecoder().decode(encodedUser), StandardCharsets.UTF_8)).getAsJsonObject());
+            }
+        } catch (java.net.SocketTimeoutException exception) {
+            throw new IOException("Google sign-in timed out.", exception);
+        }
+    }
+
+    private static Map<String, String> queryValues(String query) {
+        Map<String, String> values = new HashMap<>();
+        if (query == null) return values;
+        for (String pair : query.split("&")) {
+            String[] parts = pair.split("=", 2);
+            if (parts.length == 2) values.put(URLDecoder.decode(parts[0], StandardCharsets.UTF_8), URLDecoder.decode(parts[1], StandardCharsets.UTF_8));
+        }
+        return values;
+    }
 
     public static List<Message> publicMessages() throws IOException, InterruptedException {
         JsonObject response = post(new JsonObjectBuilder().put("action", "publicMessages").build(), sessionToken);

@@ -81,6 +81,11 @@ public class AuthenticationService {
         if (user == null) {
             throw new IllegalArgumentException("Google account information is unavailable.");
         }
+        if (RemoteApiClient.isConfigured()) {
+            activeSessions.put(user.getUsername(), user);
+            SessionManager.getInstance().login(user);
+            return user;
+        }
         user.setStatus("ONLINE");
         user.setOnline(true);
         userDAO.updateStatus(user.getId(), "ONLINE");

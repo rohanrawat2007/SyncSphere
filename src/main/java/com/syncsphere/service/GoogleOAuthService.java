@@ -39,6 +39,7 @@ public class GoogleOAuthService {
     private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(HTTP_TIMEOUT).build();
 
     public boolean isConfigured() {
+        if (RemoteApiClient.isConfigured()) return true;
         String enabled = DBConnection.resolveConfigValue("GOOGLE_OAUTH_ENABLED", "false");
         String clientId = DBConnection.resolveConfigValue("GOOGLE_CLIENT_ID", "");
         String clientSecret = DBConnection.resolveConfigValue("GOOGLE_CLIENT_SECRET", "");
@@ -48,6 +49,7 @@ public class GoogleOAuthService {
     }
 
     public User authenticateInBrowser() throws IOException, InterruptedException {
+        if (RemoteApiClient.isConfigured()) return RemoteApiClient.googleLogin();
         if (!isConfigured()) {
             throw new IllegalStateException("Google login is not configured. Please use username/password login.");
         }
