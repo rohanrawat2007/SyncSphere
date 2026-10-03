@@ -84,7 +84,10 @@ public class FriendDAO {
 
     public void createFriendship(long firstUserId, long secondUserId) throws SQLException {
         long low = Math.min(firstUserId, secondUserId), high = Math.max(firstUserId, secondUserId);
-        try (Connection connection = DBConnection.getConnection(); PreparedStatement statement = connection.prepareStatement("INSERT IGNORE INTO friends (user_id, friend_id) VALUES (?, ?)")) { statement.setLong(1, low); statement.setLong(2, high); statement.executeUpdate(); }
+        String sql = DBConnection.isPostgres()
+            ? "INSERT INTO friends (user_id, friend_id) VALUES (?, ?) ON CONFLICT (user_id, friend_id) DO NOTHING"
+            : "INSERT IGNORE INTO friends (user_id, friend_id) VALUES (?, ?)";
+        try (Connection connection = DBConnection.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) { statement.setLong(1, low); statement.setLong(2, high); statement.executeUpdate(); }
     }
 
     public boolean areFriends(long firstUserId, long secondUserId) throws SQLException {

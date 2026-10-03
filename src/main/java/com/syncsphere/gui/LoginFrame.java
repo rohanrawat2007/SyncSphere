@@ -4,6 +4,7 @@ import com.syncsphere.exception.InvalidLoginException;
 import com.syncsphere.model.User;
 import com.syncsphere.service.AuthenticationService;
 import com.syncsphere.service.GoogleOAuthService;
+import com.syncsphere.service.RemoteApiClient;
 import com.syncsphere.util.ThemePreferences;
 
 import javax.swing.BorderFactory;
@@ -13,6 +14,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -26,6 +28,7 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.IOException;
 
 /** Figma v2 login surface, backed by the existing authentication services. */
 public class LoginFrame extends JFrame {
@@ -53,6 +56,7 @@ public class LoginFrame extends JFrame {
         themeButton.addActionListener(e -> toggleTheme());
         usernameField.addActionListener(e -> performLogin());
         passwordField.addActionListener(e -> performLogin());
+        SwingUtilities.invokeLater(this::ensureApiConfiguration);
     }
 
     private JPanel buildContentPane() {
@@ -161,6 +165,30 @@ public class LoginFrame extends JFrame {
         setContentPane(buildContentPane());
         revalidate();
         repaint();
+    }
+
+    private void ensureApiConfiguration() {
+        if (RemoteApiClient.isConfigured()) return;
+
+        JTextField apiField = new JTextField("https://");
+        DesignSystem.styleField(apiField, darkTheme);
+        JPanel panel = new JPanel(new BorderLayout(0, 8));
+        panel.setOpaque(false);
+        JLabel message = new JLabel("Enter the deployed SyncSphere API URL. No database password is needed here.");
+        message.setForeground(DesignSystem.palette(darkTheme).muted());
+        panel.add(message, BorderLayout.NORTH);
+        panel.add(apiField, BorderLayout.CENTER);
+
+        Object[] options = {"Save API", "Use local mode"};
+        int choice = JOptionPane.showOptionDialog(this, panel, "SyncSphere connection setup",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+        if (choice != 0) return;
+        try {
+            RemoteApiClient.saveApiUrl(apiField.getText());
+            JOptionPane.showMessageDialog(this, "Connection saved. You can now sign in from any computer.", "Ready", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException | IllegalArgumentException exception) {
+            JOptionPane.showMessageDialog(this, exception.getMessage(), "Connection setup failed", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void performLogin() {

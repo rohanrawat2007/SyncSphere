@@ -47,6 +47,14 @@ public class ChatService {
         }
 
         String sanitized = bannedWordFilter.sanitize(content);
+        if (RemoteApiClient.isConfigured()) {
+            try {
+                Long messageId = RemoteApiClient.sendMessage(sanitized, null, replyToMessageId);
+                return new PublicMessage(messageId, senderId, "You", sanitized, java.time.LocalDateTime.now(), false);
+            } catch (Exception exception) {
+                throw new IllegalStateException("Remote message could not be sent.", exception);
+            }
+        }
         Long messageId = saveWithRateLimit(senderId, sanitized, false, null, replyToMessageId);
 
         User sender = userDAO.findById(senderId);
@@ -69,6 +77,14 @@ public class ChatService {
         }
 
         String sanitized = bannedWordFilter.sanitize(content);
+        if (RemoteApiClient.isConfigured()) {
+            try {
+                Long messageId = RemoteApiClient.sendMessage(sanitized, receiverId, replyToMessageId);
+                return new PrivateMessage(messageId, senderId, receiverId, "You", "Friend", sanitized, java.time.LocalDateTime.now(), false);
+            } catch (Exception exception) {
+                throw new IllegalStateException("Remote message could not be sent.", exception);
+            }
+        }
         Long messageId = saveWithRateLimit(senderId, sanitized, true, receiverId, replyToMessageId);
 
         User sender = userDAO.findById(senderId);
@@ -82,10 +98,18 @@ public class ChatService {
     }
 
     public List<Message> getPublicMessages() {
+        if (RemoteApiClient.isConfigured()) {
+            try { return RemoteApiClient.publicMessages(); }
+            catch (Exception exception) { throw new IllegalStateException("Remote messages could not be loaded.", exception); }
+        }
         return messageDAO.findPublicMessages();
     }
 
     public List<Message> getPrivateMessages(Long userA, Long userB) {
+        if (RemoteApiClient.isConfigured()) {
+            try { return RemoteApiClient.privateMessages(userB); }
+            catch (Exception exception) { throw new IllegalStateException("Remote conversation could not be loaded.", exception); }
+        }
         return messageDAO.findPrivateMessagesBetween(userA, userB);
     }
 
@@ -100,6 +124,10 @@ public class ChatService {
 
     public void deleteMessage(Long messageId, User actor) {
         if (actor == null || messageId == null) throw new IllegalStateException("A signed-in user and message are required.");
+        if (RemoteApiClient.isConfigured()) {
+            try { RemoteApiClient.moderate("deleteMessage", messageId, null); return; }
+            catch (Exception exception) { throw new IllegalStateException("Remote message could not be deleted.", exception); }
+        }
         Long senderId = findMessageSender(messageId);
         if (senderId == null || (!actor.isModerator() && !actor.getId().equals(senderId))) {
             throw new IllegalStateException("Only the message owner or a moderator can delete messages.");
@@ -108,8 +136,12 @@ public class ChatService {
     }
 
     public void editMessage(Long messageId, User actor, String content) throws MessageBlockedException, MessageTooLongException {
-        if (actor == null || messageId == null || !actor.getId().equals(findMessageSender(messageId))) {
+        if (actor == null || messageId == null || (!RemoteApiClient.isConfigured() && !actor.getId().equals(findMessageSender(messageId)))) {
             throw new IllegalStateException("Only the message owner can edit a message.");
+        }
+        if (RemoteApiClient.isConfigured()) {
+            try { RemoteApiClient.moderate("editMessage", messageId, content); return; }
+            catch (Exception exception) { throw new IllegalStateException("Remote message could not be edited.", exception); }
         }
         ValidationUtil.validateMessage(content);
         if (content.length() > Constants.MAX_MESSAGE_LENGTH) throw new MessageTooLongException("Message exceeds the maximum allowed length.");

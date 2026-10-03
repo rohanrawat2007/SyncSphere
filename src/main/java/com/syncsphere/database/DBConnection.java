@@ -34,6 +34,19 @@ public class DBConnection {
                 + "?" + (ssl ? "sslMode=REQUIRED" : "useSSL=false")
                 + "&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=5000&socketTimeout=5000";
     }
+    
+    public static boolean isPostgres() {
+        return "postgres".equalsIgnoreCase(resolveConfigValue("DB_TYPE", "mysql"));
+    }
+    
+    public static String buildPostgresUrl(String host, String port, String database, boolean ssl) {
+        String effectiveHost = firstNonBlank(host, "localhost");
+        String effectivePort = firstNonBlank(port, "5432");
+        String effectiveDatabase = firstNonBlank(database, "postgres");
+        return "jdbc:postgresql://" + effectiveHost + ":" + effectivePort + "/" + effectiveDatabase
+                + (ssl ? "?sslmode=require" : "?sslmode=prefer")
+                + "&connectTimeout=5&socketTimeout=5";
+    }
 
     public static String buildJdbcUrl() {
         return buildJdbcUrl(resolveConfigValue("DB_HOST", DEFAULT_HOST),
@@ -47,17 +60,26 @@ public class DBConnection {
         String database = resolveConfigValue("DB_NAME", DEFAULT_DATABASE);
         String user = resolveConfigValue("DB_USER", "");
         String password = resolveConfigValue("DB_PASSWORD", "");
+        boolean postgres = isPostgres();
 
         if (user == null || user.isBlank()) {
+            if (postgres) {
+                throw new SQLException("Supabase is not configured. Set DB_TYPE=postgres, DB_USER, and DB_PASSWORD in .env.");
+            }
             System.err.println("MySQL is not configured. Set DB_USER and DB_PASSWORD in .env or environment variables.");
             return createFallbackConnection();
         }
 
         boolean ssl = "true".equalsIgnoreCase(resolveConfigValue("DB_SSL", "false"));
-        String url = buildJdbcUrl(host, port, database, ssl);
+        String url = postgres
+                ? buildPostgresUrl(host, port, database, ssl)
+                : buildJdbcUrl(host, port, database, ssl);
         try {
             return DriverManager.getConnection(url, user, password);
         } catch (SQLException e) {
+            if (postgres) {
+                throw new SQLException("Supabase connection failed. Check DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, and DB_SSL.", e);
+            }
             System.err.println("MySQL connection failed using the local .env or environment configuration. Falling back to the in-memory demo database.");
             return createFallbackConnection();
         }

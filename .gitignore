@@ -3,6 +3,8 @@
 .idea/
 .vscode/
 target/
+dist/
 .DS_Store
 *.iml
+supabase/.temp/
 

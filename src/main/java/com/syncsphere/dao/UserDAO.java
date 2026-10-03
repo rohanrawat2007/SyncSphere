@@ -2,6 +2,7 @@ package com.syncsphere.dao;
 
 import com.syncsphere.database.DBConnection;
 import com.syncsphere.model.User;
+import com.syncsphere.service.RemoteApiClient;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -229,6 +230,13 @@ public class UserDAO {
     }
 
     public List<User> findOnlineUsers() {
+        if (RemoteApiClient.isConfigured()) {
+            try {
+                return RemoteApiClient.searchUsers("").stream().filter(User::isOnline).toList();
+            } catch (Exception exception) {
+                return List.of();
+            }
+        }
         try {
             String sql = "SELECT * FROM users WHERE status = 'ONLINE' ORDER BY username";
             List<User> users = new ArrayList<>();

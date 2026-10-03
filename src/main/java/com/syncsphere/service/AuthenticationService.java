@@ -7,6 +7,7 @@ import com.syncsphere.model.User;
 import com.syncsphere.util.PasswordUtil;
 import com.syncsphere.util.ValidationUtil;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,6 +18,15 @@ public class AuthenticationService {
     public User register(String username, String password) throws UserAlreadyExistsException {
         ValidationUtil.validateUsername(username);
         ValidationUtil.validatePassword(password);
+
+        if (RemoteApiClient.isConfigured()) {
+            try {
+                return RemoteApiClient.register(username.trim(), password);
+            } catch (IOException | InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Remote registration could not be completed.", exception);
+            }
+        }
 
         User existingUser = userDAO.findByUsername(username);
         if (existingUser != null) {
@@ -38,6 +48,20 @@ public class AuthenticationService {
         ValidationUtil.validateUsername(username);
         if (password == null || password.isBlank()) {
             throw new InvalidLoginException("Password is required.");
+        }
+
+        if (RemoteApiClient.isConfigured()) {
+            try {
+                User user = RemoteApiClient.login(username.trim(), password);
+                activeSessions.put(user.getUsername(), user);
+                SessionManager.getInstance().login(user);
+                return user;
+            } catch (IOException exception) {
+                throw new InvalidLoginException(exception.getMessage());
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new InvalidLoginException("Remote login was interrupted.");
+            }
         }
 
         User user = userDAO.validateLogin(username, password);
@@ -70,6 +94,18 @@ public class AuthenticationService {
             return;
         }
         activeSessions.remove(username);
+
+        if (RemoteApiClient.isConfigured()) {
+            try {
+                RemoteApiClient.logout();
+            } catch (IOException exception) {
+                // The local session is still cleared when the remote host is unavailable.
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            }
+            SessionManager.getInstance().logout(new User(null, username, null, null, null, "LOCAL", "USER", "OFFLINE", null));
+            return;
+        }
 
         User user = userDAO.findByUsername(username);
         if (user != null) {

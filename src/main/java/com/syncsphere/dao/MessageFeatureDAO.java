@@ -53,9 +53,11 @@ public class MessageFeatureDAO {
     }
 
     public void markRead(long messageId, long userId) throws SQLException {
+        String sql = DBConnection.isPostgres()
+            ? "INSERT INTO message_reads (message_id, user_id) VALUES (?, ?) ON CONFLICT (message_id, user_id) DO UPDATE SET read_at = CURRENT_TIMESTAMP"
+            : "INSERT INTO message_reads (message_id, user_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE read_at = CURRENT_TIMESTAMP";
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     "INSERT INTO message_reads (message_id, user_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE read_at = CURRENT_TIMESTAMP")) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, messageId);
             statement.setLong(2, userId);
             statement.executeUpdate();
@@ -110,7 +112,7 @@ public class MessageFeatureDAO {
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(
                      "INSERT INTO notifications (user_id, message_id, type, content) " +
-                             "SELECT ?, ?, 'MENTION', ? FROM DUAL WHERE NOT EXISTS " +
+                     "SELECT ?, ?, 'MENTION', ? WHERE NOT EXISTS " +
                              "(SELECT 1 FROM notifications WHERE user_id = ? AND message_id = ? AND type = 'MENTION')")) {
             statement.setLong(1, userId); statement.setLong(2, messageId); statement.setString(3, content);
             statement.setLong(4, userId); statement.setLong(5, messageId); statement.executeUpdate();
@@ -143,8 +145,11 @@ public class MessageFeatureDAO {
     }
 
     public void setMute(long userId, long moderatorId, long durationSeconds, String reason) throws SQLException {
+        String sql = DBConnection.isPostgres()
+            ? "INSERT INTO mutes (user_id, muted_by, expires_at, reason) VALUES (?, ?, ?, ?) ON CONFLICT (user_id) DO UPDATE SET muted_by = EXCLUDED.muted_by, expires_at = EXCLUDED.expires_at, reason = EXCLUDED.reason"
+            : "INSERT INTO mutes (user_id, muted_by, expires_at, reason) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE muted_by = VALUES(muted_by), expires_at = VALUES(expires_at), reason = VALUES(reason)";
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement("INSERT INTO mutes (user_id, muted_by, expires_at, reason) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE muted_by = VALUES(muted_by), expires_at = VALUES(expires_at), reason = VALUES(reason)")) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, userId); statement.setLong(2, moderatorId);
             if (durationSeconds <= 0) statement.setNull(3, Types.TIMESTAMP); else statement.setTimestamp(3, Timestamp.from(java.time.Instant.now().plusSeconds(durationSeconds)));
             statement.setString(4, reason); statement.executeUpdate();

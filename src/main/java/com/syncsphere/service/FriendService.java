@@ -20,11 +20,21 @@ public class FriendService {
 
     public List<User> searchUsers(User authenticatedUser, String query) throws SQLException {
         User actor = sessions.requireAuthenticated(authenticatedUser);
+        if (RemoteApiClient.isConfigured()) {
+            try { return RemoteApiClient.searchUsers(query); }
+            catch (Exception exception) { throw new SQLException("Remote user search failed.", exception); }
+        }
         return friendDAO.searchUsers(query, actor.getId());
     }
 
     public long sendRequest(User authenticatedUser, long receiverId) throws SQLException {
         User actor = sessions.requireAuthenticated(authenticatedUser);
+        if (RemoteApiClient.isConfigured()) {
+            try {
+                RemoteApiClient.sendFriendRequest(receiverId);
+                return 0L;
+            } catch (Exception exception) { throw new SQLException("Remote friend request failed.", exception); }
+        }
         if (actor.getId().equals(receiverId)) throw new IllegalArgumentException("You cannot add yourself.");
         if (receiverId <= 0 || !userExists(receiverId)) throw new IllegalArgumentException("User does not exist.");
         if (friendDAO.areFriends(actor.getId(), receiverId)) throw new IllegalStateException("You are already friends.");
@@ -35,10 +45,21 @@ public class FriendService {
         return requestId;
     }
 
-    public List<FriendRequest> incomingRequests(User authenticatedUser) throws SQLException { return friendDAO.incomingRequests(sessions.requireAuthenticated(authenticatedUser).getId()); }
+    public List<FriendRequest> incomingRequests(User authenticatedUser) throws SQLException {
+        sessions.requireAuthenticated(authenticatedUser);
+        if (RemoteApiClient.isConfigured()) {
+            try { return RemoteApiClient.incomingRequests(); }
+            catch (Exception exception) { throw new SQLException("Remote friend requests failed.", exception); }
+        }
+        return friendDAO.incomingRequests(authenticatedUser.getId());
+    }
 
     public void acceptRequest(User authenticatedUser, long requestId) throws SQLException {
         User actor = sessions.requireAuthenticated(authenticatedUser);
+        if (RemoteApiClient.isConfigured()) {
+            try { RemoteApiClient.respondFriendRequest(requestId, "ACCEPTED"); return; }
+            catch (Exception exception) { throw new SQLException("Remote friend request failed.", exception); }
+        }
         FriendRequest request = friendDAO.findRequest(requestId);
         if (request == null || !actor.getId().equals(request.receiver().getId())) throw new IllegalStateException("You cannot accept this request.");
         friendDAO.respond(requestId, actor.getId(), "ACCEPTED");
@@ -48,13 +69,24 @@ public class FriendService {
 
     public void declineRequest(User authenticatedUser, long requestId) throws SQLException {
         User actor = sessions.requireAuthenticated(authenticatedUser);
+        if (RemoteApiClient.isConfigured()) {
+            try { RemoteApiClient.respondFriendRequest(requestId, "DECLINED"); return; }
+            catch (Exception exception) { throw new SQLException("Remote friend request failed.", exception); }
+        }
         FriendRequest request = friendDAO.findRequest(requestId);
         if (request == null || !actor.getId().equals(request.receiver().getId())) throw new IllegalStateException("You cannot decline this request.");
         friendDAO.respond(requestId, actor.getId(), "DECLINED");
         friendDAO.addRequestNotification(request.sender().getId(), requestId, "FRIEND_DECLINED", actor.getUsername() + " declined your friend request.");
     }
 
-    public List<Friend> getFriends(User authenticatedUser) throws SQLException { return friendDAO.findFriends(sessions.requireAuthenticated(authenticatedUser).getId()); }
+    public List<Friend> getFriends(User authenticatedUser) throws SQLException {
+        sessions.requireAuthenticated(authenticatedUser);
+        if (RemoteApiClient.isConfigured()) {
+            try { return RemoteApiClient.friends(); }
+            catch (Exception exception) { throw new SQLException("Remote friends failed.", exception); }
+        }
+        return friendDAO.findFriends(authenticatedUser.getId());
+    }
 
     public void removeFriend(User authenticatedUser, long friendId) throws SQLException {
         User actor = sessions.requireAuthenticated(authenticatedUser);

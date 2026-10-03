@@ -19,6 +19,12 @@ class DatabaseConnectionTest {
     }
 
     @Test
+    void postgresUrlShouldRequireTlsWhenConfigured() {
+        String url = DBConnection.buildPostgresUrl("db.example.supabase.co", "5432", "postgres", true);
+        assertEquals("jdbc:postgresql://db.example.supabase.co:5432/postgres?sslmode=require&connectTimeout=5&socketTimeout=5", url);
+    }
+
+    @Test
     void connectionShouldReachDatabaseOrFailGracefully() {
         try (Connection connection = DBConnection.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();

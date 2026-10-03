@@ -69,6 +69,36 @@ $env:DB_USER="root"
 $env:DB_PASSWORD="YOUR_PASSWORD"
 ```
 
+### Supabase free-tier configuration
+
+For two computers on different networks, use the linked Supabase PostgreSQL project as the shared database. Run `database/schema-postgres.sql` in the Supabase SQL Editor, then create the same `.env` values on both computers:
+
+```env
+DB_TYPE=postgres
+DB_HOST=db.bdmaqszzouirvldgdjyd.supabase.co
+DB_PORT=5432
+DB_NAME=postgres
+DB_USER=postgres
+DB_PASSWORD=YOUR_SUPABASE_DATABASE_PASSWORD
+DB_SSL=true
+```
+
+Keep `.env` private. If PostgreSQL mode is configured incorrectly, SyncSphere stops with a clear connection error instead of falling back to isolated local data.
+
+### Credential-free desktop distribution
+
+For the packaged desktop application, set only `SYNCSPHERE_API_URL` to the deployed HTTPS website/API URL. Do not distribute `DB_PASSWORD`, `SUPABASE_SERVICE_ROLE_KEY`, or any direct database URL with the executable. Configure `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `SYNCSPHERE_SESSION_SECRET` only on the API server.
+
+When the desktop app starts without an API URL, it opens **SyncSphere connection setup**. Paste the public API URL and choose **Save API**. The URL is stored at `%USERPROFILE%\\.syncsphere\\config.properties`; choose **Use local mode** only for local development. Install the same executable on the second computer and enter the same API URL there.
+
+For the website/API deployment, configure these server-only variables in the hosting provider:
+
+```env
+SUPABASE_URL=https://bdmaqszzouirvldgdjyd.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVER_ONLY_KEY
+SYNCSPHERE_SESSION_SECRET=YOUR_RANDOM_LONG_SECRET
+```
+
 Google OAuth uses the Desktop client variables `GOOGLE_OAUTH_ENABLED`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET`. The web client variables are reserved for the separate website and are not used by this Swing application.
 
 ## How to run
