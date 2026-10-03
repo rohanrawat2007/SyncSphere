@@ -65,7 +65,7 @@ public final class RemoteApiClient {
                 return properties.getProperty(API_URL_KEY, "").trim();
             } catch (IOException ignored) { }
         }
-        return DEFAULT_API_URL;
+        return Boolean.getBoolean("SYNCSPHERE_PACKAGED") ? DEFAULT_API_URL : "";
     }
 
     public static void saveApiUrl(String url) throws IOException {

@@ -21,6 +21,7 @@ jpackage `
   --dest dist `
   --app-version 1.0.0 `
   --vendor SyncSphere `
+  --java-options "-DSYNCSPHERE_PACKAGED=true" `
   --win-dir-chooser `
   --win-shortcut
 
