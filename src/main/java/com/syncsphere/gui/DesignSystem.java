@@ -140,6 +140,7 @@ public final class DesignSystem {
             setContentAreaFilled(false);
             setOpaque(false);
             setBorderPainted(false);
+            setMargin(new java.awt.Insets(0, 0, 0, 0));
             setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
             setPreferredSize(new Dimension(44, 44));
             addMouseListener(new java.awt.event.MouseAdapter() {

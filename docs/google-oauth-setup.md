@@ -25,18 +25,43 @@ This project supports Google sign-in as an optional authentication method. The a
 
 ## 4. Store secrets safely
 
-Put the generated values in your local `.env` file, not in source code:
+## 4. Vercel & Multi-Device Setup (Fixing `redirect_uri_mismatch`)
+
+When deploying the API to Vercel, Google OAuth requires registering the exact callback URL of your Vercel deployment:
+
+1. Open Google Cloud Console -> **APIs & Services** -> **Credentials**.
+2. Select your **OAuth 2.0 Client ID** (Web application type).
+3. Under **Authorized JavaScript origins**, add:
+   - `https://<your-vercel-domain>.vercel.app` (e.g. `https://syncsphere-website.vercel.app`)
+4. Under **Authorized redirect URIs**, add:
+   - `https://<your-vercel-domain>.vercel.app/api/syncsphere/google/callback`
+   - `http://localhost:8080/oauth2/callback` (for local Java desktop direct mode)
+   - `http://localhost:3000/api/syncsphere/google/callback` (for local website dev)
+5. Save the credentials.
+
+## 5. Store secrets in Vercel & local `.env`
+
+In Vercel project environment variables, add:
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `SYNCSPHERE_SESSION_SECRET`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+In your local `.env` file for desktop/local development:
 
 ```dotenv
 GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_OAUTH_ENABLED=true
+SYNCSPHERE_API_URL=https://<your-vercel-domain>.vercel.app
 ```
 
-## 5. Test the callback
+## 6. Test the callback & multi-device login
 
-Start the app and choose the Google login button. If the environment variables are missing or invalid, the app shows a friendly message instead of crashing.
+Start the desktop app or connect via Vercel HTTPS API. Choose Google Sign-In:
+1. Desktop opens browser to Vercel `/api/syncsphere/google/start`.
+2. Vercel redirects to Google Auth with `redirect_uri=https://<your-domain>/api/syncsphere/google/callback`.
+3. User signs in with Google.
+4. Google redirects back to Vercel callback, which validates identity and returns session token to desktop app via loopback.
 
-## 6. Rotation and revocation
-
-If a secret is exposed, revoke it in Google Cloud and create a new OAuth credential immediately.

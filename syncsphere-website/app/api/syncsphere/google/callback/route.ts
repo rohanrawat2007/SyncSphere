@@ -44,7 +44,10 @@ export async function GET(request: Request) {
   if (!user) {
     const base = (identity.name ?? identity.email.split('@')[0]).replace(/[^A-Za-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 42) || 'google_user';
     const { data: created, error } = await supabase.from('users').insert({ username: `${base}_${createHash('sha256').update(identity.sub).digest('hex').slice(0, 6)}`, email: identity.email, google_id: identity.sub, auth_provider: 'GOOGLE', role: 'USER', status: 'ONLINE' }).select('*').single();
-    if (error) return new NextResponse('Google account could not be created.', { status: 500 });
+    if (error) {
+      console.error('Supabase user insert error:', error);
+      return new NextResponse('Google account could not be created.', { status: 500 });
+    }
     user = created;
   } else {
     await supabase.from('users').update({ google_id: identity.sub, auth_provider: 'GOOGLE', status: 'ONLINE' }).eq('id', user.id);

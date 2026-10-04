@@ -39,6 +39,7 @@ import java.util.Map;
 /** Client for the credential-free HTTPS API used by distributed desktop clients. */
 public final class RemoteApiClient {
     private static final String API_URL_KEY = "SYNCSPHERE_API_URL";
+    private static final String LOCAL_MODE_KEY = "SYNCSPHERE_LOCAL_MODE";
     private static final String DEFAULT_API_URL = "https://syncsphere-website.vercel.app";
     private static final Duration TIMEOUT = Duration.ofSeconds(15);
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
@@ -52,19 +53,30 @@ public final class RemoteApiClient {
         return !url.isBlank() && !url.contains("your-api-host");
     }
 
+    /** True only when the user deliberately chose the local JDBC development mode. */
+    public static boolean isLocalMode() {
+        if ("true".equalsIgnoreCase(System.getProperty(LOCAL_MODE_KEY))) return true;
+        return "true".equalsIgnoreCase(savedConfiguration().getProperty(LOCAL_MODE_KEY));
+    }
+
+    /** Whether the user or environment supplied a connection choice, rather than a packaged default. */
+    public static boolean hasConnectionPreference() {
+        if (isLocalMode()) return true;
+        if (!DBConnection.resolveConfigValue(API_URL_KEY, "").isBlank()) return true;
+        if (System.getProperty(API_URL_KEY) != null && !System.getProperty(API_URL_KEY).isBlank()) return true;
+        return !savedConfiguration().getProperty(API_URL_KEY, "").isBlank();
+    }
+
+    public static String defaultApiUrl() { return DEFAULT_API_URL; }
+
     public static String apiUrl() {
+        if (isLocalMode()) return "";
         String configured = DBConnection.resolveConfigValue(API_URL_KEY, "");
         if (!configured.isBlank()) return configured;
         String property = System.getProperty(API_URL_KEY);
         if (property != null && !property.isBlank()) return property.trim();
-        Path config = Path.of(System.getProperty("user.home"), ".syncsphere", "config.properties");
-        if (Files.exists(config)) {
-            try {
-                Properties properties = new Properties();
-                try (var reader = Files.newBufferedReader(config)) { properties.load(reader); }
-                return properties.getProperty(API_URL_KEY, "").trim();
-            } catch (IOException ignored) { }
-        }
+        String saved = savedConfiguration().getProperty(API_URL_KEY, "").trim();
+        if (!saved.isBlank()) return saved;
         return Boolean.getBoolean("SYNCSPHERE_PACKAGED") ? DEFAULT_API_URL : "";
     }
 
@@ -73,12 +85,36 @@ public final class RemoteApiClient {
         if (!normalized.isBlank() && !normalized.startsWith("https://") && !normalized.startsWith("http://localhost")) {
             throw new IllegalArgumentException("Use an HTTPS API URL.");
         }
-        Path directory = Path.of(System.getProperty("user.home"), ".syncsphere");
+        if (normalized.isBlank()) { useLocalMode(); return; }
+        Path directory = configurationDirectory();
         Files.createDirectories(directory);
-        Properties properties = new Properties();
+        Properties properties = savedConfiguration();
         properties.setProperty(API_URL_KEY, normalized);
-        try (var writer = Files.newBufferedWriter(directory.resolve("config.properties"))) { properties.store(writer, "SyncSphere desktop configuration"); }
+        properties.setProperty(LOCAL_MODE_KEY, "false");
+        try (var writer = Files.newBufferedWriter(configurationFile())) { properties.store(writer, "SyncSphere desktop configuration"); }
         System.setProperty(API_URL_KEY, normalized);
+        System.setProperty(LOCAL_MODE_KEY, "false");
+    }
+
+    public static void useLocalMode() throws IOException {
+        Files.createDirectories(configurationDirectory());
+        Properties properties = savedConfiguration();
+        properties.remove(API_URL_KEY);
+        properties.setProperty(LOCAL_MODE_KEY, "true");
+        try (var writer = Files.newBufferedWriter(configurationFile())) { properties.store(writer, "SyncSphere desktop configuration"); }
+        System.clearProperty(API_URL_KEY);
+        System.setProperty(LOCAL_MODE_KEY, "true");
+    }
+
+    private static Path configurationDirectory() { return Path.of(System.getProperty("user.home"), ".syncsphere"); }
+    private static Path configurationFile() { return configurationDirectory().resolve("config.properties"); }
+    private static Properties savedConfiguration() {
+        Properties properties = new Properties();
+        Path config = configurationFile();
+        if (!Files.exists(config)) return properties;
+        try (var reader = Files.newBufferedReader(config)) { properties.load(reader); }
+        catch (IOException ignored) { }
+        return properties;
     }
 
     public static User register(String username, String password) throws IOException, InterruptedException {

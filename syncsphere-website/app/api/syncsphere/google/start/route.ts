@@ -14,8 +14,12 @@ export async function GET(request: Request) {
   let callback: URL;
   try { callback = new URL(redirectUri); }
   catch { return NextResponse.json({ error: 'Invalid desktop callback.' }, { status: 400 }); }
-  if (callback.protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(callback.hostname) || !callback.pathname.startsWith('/')) {
-    return NextResponse.json({ error: 'Invalid desktop callback.' }, { status: 400 });
+  if (!callback.pathname.startsWith('/')) {
+    return NextResponse.json({ error: 'Invalid callback path.' }, { status: 400 });
+  }
+  const isLoopback = ['127.0.0.1', 'localhost'].includes(callback.hostname);
+  if (!isLoopback && callback.protocol !== 'https:') {
+    return NextResponse.json({ error: 'OAuth redirect URI must use HTTPS or local loopback.' }, { status: 400 });
   }
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const googleCallback = `${new URL(request.url).origin}/api/syncsphere/google/callback`;

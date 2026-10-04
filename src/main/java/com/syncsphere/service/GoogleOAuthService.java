@@ -38,11 +38,27 @@ public class GoogleOAuthService {
     private final Gson gson = new Gson();
     private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(HTTP_TIMEOUT).build();
 
+    private String resolveClientId() {
+        String id = DBConnection.resolveConfigValue("GOOGLE_CLIENT_ID", "");
+        if (id.isBlank() || "YOUR_GOOGLE_CLIENT_ID".equals(id)) {
+            id = DBConnection.resolveConfigValue("GOOGLE_WEB_CLIENT_ID", "");
+        }
+        return id;
+    }
+
+    private String resolveClientSecret() {
+        String secret = DBConnection.resolveConfigValue("GOOGLE_CLIENT_SECRET", "");
+        if (secret.isBlank() || "YOUR_GOOGLE_CLIENT_SECRET".equals(secret)) {
+            secret = DBConnection.resolveConfigValue("GOOGLE_WEB_CLIENT_SECRET", "");
+        }
+        return secret;
+    }
+
     public boolean isConfigured() {
         if (RemoteApiClient.isConfigured()) return true;
         String enabled = DBConnection.resolveConfigValue("GOOGLE_OAUTH_ENABLED", "false");
-        String clientId = DBConnection.resolveConfigValue("GOOGLE_CLIENT_ID", "");
-        String clientSecret = DBConnection.resolveConfigValue("GOOGLE_CLIENT_SECRET", "");
+        String clientId = resolveClientId();
+        String clientSecret = resolveClientSecret();
         return "true".equalsIgnoreCase(enabled)
                 && isRealValue(clientId, "YOUR_GOOGLE_CLIENT_ID")
                 && isRealValue(clientSecret, "YOUR_GOOGLE_CLIENT_SECRET");
@@ -54,17 +70,31 @@ public class GoogleOAuthService {
             throw new IllegalStateException("Google login is not configured. Please use username/password login.");
         }
 
-        String clientId = DBConnection.resolveConfigValue("GOOGLE_CLIENT_ID", "");
-        String clientSecret = DBConnection.resolveConfigValue("GOOGLE_CLIENT_SECRET", "");
+        String clientId = resolveClientId();
+        String clientSecret = resolveClientSecret();
         String state = randomToken(32);
         String codeVerifier = randomToken(48);
         String codeChallenge = base64Url(sha256(codeVerifier));
 
-        try (ServerSocket callbackServer = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
-            callbackServer.setSoTimeout(CALLBACK_TIMEOUT_SECONDS * 1000);
-            String redirectUri = "http://127.0.0.1:" + callbackServer.getLocalPort() + "/oauth2/callback";
+        int port = 8080;
+        String configuredUri = DBConnection.resolveConfigValue("GOOGLE_REDIRECT_URI", "http://localhost:8080/oauth2/callback");
+        try {
+            java.net.URI parsed = java.net.URI.create(configuredUri);
+            if (parsed.getPort() > 0) port = parsed.getPort();
+        } catch (Exception ignored) { }
+
+        ServerSocket callbackServer;
+        try {
+            callbackServer = new ServerSocket(port, 1, InetAddress.getLoopbackAddress());
+        } catch (IOException e) {
+            callbackServer = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+        }
+
+        try (ServerSocket server = callbackServer) {
+            server.setSoTimeout(CALLBACK_TIMEOUT_SECONDS * 1000);
+            String redirectUri = "http://localhost:" + server.getLocalPort() + "/oauth2/callback";
             openBrowser(buildAuthorizationUrl(clientId, redirectUri, state, codeChallenge));
-            Callback callback = waitForCallback(callbackServer, state);
+            Callback callback = waitForCallback(server, state);
             String accessToken = exchangeCode(callback.code(), codeVerifier, redirectUri, clientId, clientSecret);
             JsonObject identity = fetchIdentity(accessToken);
             String googleId = requiredIdentityValue(identity, "sub");

@@ -98,7 +98,7 @@ public class AuthenticationService {
         if (username == null || username.isBlank()) {
             return;
         }
-        activeSessions.remove(username);
+        User activeUser = activeSessions.remove(username);
 
         if (RemoteApiClient.isConfigured()) {
             try {
@@ -108,7 +108,9 @@ public class AuthenticationService {
             } catch (InterruptedException exception) {
                 Thread.currentThread().interrupt();
             }
-            SessionManager.getInstance().logout(new User(null, username, null, null, null, "LOCAL", "USER", "OFFLINE", null));
+            if (activeUser != null) {
+                SessionManager.getInstance().logout(activeUser);
+            }
             return;
         }
 
