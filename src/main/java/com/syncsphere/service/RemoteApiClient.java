@@ -76,8 +76,7 @@ public final class RemoteApiClient {
         String property = System.getProperty(API_URL_KEY);
         if (property != null && !property.isBlank()) return property.trim();
         String saved = savedConfiguration().getProperty(API_URL_KEY, "").trim();
-        if (!saved.isBlank()) return saved;
-        return Boolean.getBoolean("SYNCSPHERE_PACKAGED") ? DEFAULT_API_URL : "";
+        return DEFAULT_API_URL;
     }
 
     public static void saveApiUrl(String url) throws IOException {
